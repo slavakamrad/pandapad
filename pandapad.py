@@ -113,7 +113,7 @@ class PandaPad(QWidget):
         # self.enum_line.setFrameShape(QFrame.Shape.StyledPanel)
 
         # self.enum_line.setStyleSheet("background-color: #ff0000")
-
+        self.file_browser_enable = False
         self.file_tree = QTreeView(self)
         self.file_tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
 
@@ -192,11 +192,17 @@ class PandaPad(QWidget):
         about.exec()
 
     def enable_file_browser(self):
-        self.model.setRootPath(QDir.rootPath())
-        self.file_tree.customContextMenuRequested.connect(self.context_menu)
-        self.file_tree.setModel(self.model)
-        self.file_tree.setRootIndex(self.model.index(self.home_dir))
-        self.h_layout.addWidget(self.file_tree, alignment=Qt.AlignmentFlag.AlignRight)
+        if not self.file_browser_enable:
+            self.file_tree.show()
+            self.model.setRootPath(QDir.rootPath())
+            self.file_tree.customContextMenuRequested.connect(self.context_menu)
+            self.file_tree.setModel(self.model)
+            self.file_tree.setRootIndex(self.model.index(self.home_dir))
+            self.h_layout.addWidget(self.file_tree, alignment=Qt.AlignmentFlag.AlignRight)
+            self.file_browser_enable = True
+        else:
+            self.file_tree.close()
+            self.file_browser_enable = False
 
     def context_menu(self):
         menu = QMenu()
