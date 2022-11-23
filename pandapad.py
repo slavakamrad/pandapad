@@ -159,12 +159,13 @@ class PandaPad(QWidget):
 
     def open_dialog(self):
         name = QFileDialog.getOpenFileName(self, 'Open file', self.home_dir)
-
+        file_name = name[0].split('/')[-1]
         if name[0]:
             f = open(name[0], 'r')
             with f:
                 data = f.read()
-                self.editor.set_text(data)
+                self.new_editor.set_text(data)
+                self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), file_name)
 
     def change_style(self, style):
         match style:
@@ -206,12 +207,13 @@ class PandaPad(QWidget):
 
     def open_tree_file(self):
         index = self.file_tree.currentIndex()
-        name = self.model.fileName(index)
-        f = open(name, 'r')
+        file_name = self.model.fileName(index)
+        f = open(file_name, 'r')
         with f:
             data = f.read()
             self.create_new_tab()
             self.new_editor.set_text(data)
+            self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), file_name)
 
 
 app = QApplication(sys.argv)
