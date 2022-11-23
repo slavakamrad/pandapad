@@ -7,18 +7,26 @@ from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QTextEdit, QMenu
 import sys
 
 
-class EditWidget(QWidget):
+class EditWidget(QTextEdit):
     def __init__(self):
         super().__init__()
 
         layout = QHBoxLayout()
         self.setLayout(layout)
         self.text_input = QTextEdit()
+
         layout.addWidget(self.text_input)
 
     def set_text(self, data):
         self.text_input.setText(data)
 
+    def change_style(self, style):
+        match style:
+            case 'Dark':
+                self.setStyleSheet("background-color: #303030; color: #fff")
+            case 'Light':
+                self.setStyleSheet("background-color: #fff; color: #000 ")
+        print(self.styleSheet())
 
 class PandaPad(QWidget):
 
@@ -27,8 +35,8 @@ class PandaPad(QWidget):
         self.file_tree = None
         self.new_editor = None
         self.setAutoFillBackground(True)
-        self.setStyleSheet("QWidget { background-color: #424242; "
-                           "color: #fff}")
+        self.setStyleSheet("background-color: #424242; "
+                           "color: #fff")
 
         self.default_style = 'Dark'
         self.resize(1000, 600)
@@ -105,14 +113,7 @@ class PandaPad(QWidget):
         q.addAction(about_menu)
 
         self.editor = EditWidget()
-
-        self.editor.setStyleSheet("QTextEdit { background-color: #303030; "
-                                  "color: #fff}")
-
-        # self.enum_line = QFrame()
-        # self.enum_line.setFrameShape(QFrame.Shape.StyledPanel)
-
-        # self.enum_line.setStyleSheet("background-color: #ff0000")
+        self.editor.change_style(self.default_style)
         self.file_browser_enable = False
         self.file_tree = QTreeView(self)
         self.file_tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -127,7 +128,6 @@ class PandaPad(QWidget):
         self.tab.setCurrentIndex(self.index)
         self.tab.tabCloseRequested.connect(self.close_tab)
         self.v_layout.addWidget(menubar)
-        # self.h_layout.addWidget(self.enum_line, alignment=Qt.AlignmentFlag.AlignLeft)
         self.h_layout.addWidget(self.tab)
 
     def close_tab(self):
@@ -138,14 +138,13 @@ class PandaPad(QWidget):
     def create_new_tab(self):
         self.count += 1
         self.new_editor = EditWidget()
-        if self.default_style == 'Dark':
-            self.new_editor.setStyleSheet("QTextEdit { background-color: #303030; "
-                                          "color: #fff}")
-        else:
-            self.new_editor.setStyleSheet("QTextEdit { background-color: #fff; "
-                                          "color: #000}")
+        self.new_editor.setStyleSheet(EditWidget.styleSheet(self))
         self.index = self.tab.addTab(self.new_editor, f"New Text {self.count}")
         self.tab.setCurrentIndex(self.index)
+        if self.default_style == 'Dark':
+            self.new_editor.change_style('Dark')
+        else:
+            self.new_editor.change_style('Light')
 
     def save_as_text(self):
         name = QFileDialog.getSaveFileName(self, 'Save File')
@@ -170,16 +169,14 @@ class PandaPad(QWidget):
     def change_style(self, style):
         match style:
             case 'Dark':
-                self.setStyleSheet("QWidget { background-color: #424242; "
-                                   "color: #fff}")
-                self.editor.setStyleSheet("QTextEdit { background-color: #303030; "
-                                          "color: #fff}")
+                self.setStyleSheet("background-color: #424242; "
+                                   "color: #fff")
+                self.editor.change_style(style)
                 self.default_style = 'Dark'
             case 'Light':
-                self.setStyleSheet("QWidget { background-color: #fff; "
-                                   "color: #000}")
-                self.editor.setStyleSheet("QTextEdit { background-color: #fff; "
-                                          "color: #000}")
+                self.setStyleSheet("background-color: #fff; "
+                                   "color: #000")
+                self.editor.change_style(style)
                 self.default_style = 'Light'
 
     def show_about(self):
