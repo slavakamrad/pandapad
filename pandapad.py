@@ -1,8 +1,8 @@
 from pathlib import Path
-from PyQt6.QtCore import Qt, QDir
+from PyQt6.QtCore import Qt, QDir, QPoint
 from PyQt6.QtGui import QAction, QFileSystemModel, QCursor
 from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QTextEdit, QMenuBar, QFileDialog, QMessageBox, \
-    QTabWidget, QHBoxLayout, QTreeView, QMenu
+    QTabWidget, QHBoxLayout, QTreeView, QMenu, QFrame
 
 import sys
 
@@ -10,12 +10,7 @@ import sys
 class EditWidget(QTextEdit):
     def __init__(self):
         super().__init__()
-
-        layout = QHBoxLayout()
-        self.setLayout(layout)
         self.text_input = QTextEdit()
-
-        layout.addWidget(self.text_input)
 
     def set_text(self, data):
         self.text_input.setText(data)
@@ -25,17 +20,19 @@ class EditWidget(QTextEdit):
             case 'Dark':
                 self.setStyleSheet("background-color: #303030; color: #fff")
             case 'Light':
-                self.setStyleSheet("background-color: #fff; color: #000 ")
+                self.setStyleSheet("background-color: #f2f2f2; color: #000 ")
 
 
 class PandaPad(QWidget):
-
     def __init__(self):
         super().__init__()
+        self.dragPos = QPoint()
         self.new_editor = None
+
         self.setAutoFillBackground(True)
-        self.setStyleSheet("background-color: #424242; "
-                           "color: #fff")
+        self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
+        # self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setStyleSheet("background-color: #424242; color: #fff; border: 5px;")
         self.new_editor_list = []
         self.default_style = 'Dark'
         self.resize(1000, 600)
@@ -54,6 +51,7 @@ class PandaPad(QWidget):
         self.setLayout(self.main_layout)
 
         menubar = QMenuBar()
+        managebar = QMenuBar()
 
         file_new = QAction("New", self)
         file_new.setShortcut('Ctrl+N')
@@ -111,6 +109,14 @@ class PandaPad(QWidget):
         q = menubar.addMenu('&?')
         q.addAction(about_menu)
 
+        collapse_button = managebar.addAction("🗕")
+
+        # collapse_button.triggered.connect()
+        expand_button = managebar.addAction("🗖")
+        # expand_button.triggered.connect()
+        close_button = managebar.addAction("🗙")
+        close_button.triggered.connect(lambda: self.close())
+
         self.editor = EditWidget()
         self.editor.change_style(self.default_style)
         self.file_browser_enable = False
@@ -127,7 +133,10 @@ class PandaPad(QWidget):
         self.tab.setTabsClosable(True)
         self.tab.setCurrentIndex(self.index)
         self.tab.tabCloseRequested.connect(self.close_tab)
-        self.v_layout.addWidget(menubar)
+        self.menu_layout = QHBoxLayout()
+        self.menu_layout.addWidget(menubar)
+        self.menu_layout.addWidget(managebar, alignment=Qt.AlignmentFlag.AlignRight)
+        self.v_layout.addLayout(self.menu_layout)
         self.h_layout.addWidget(self.tab)
 
     def close_tab(self):
@@ -175,7 +184,7 @@ class PandaPad(QWidget):
                     i.change_style(style)
                 self.default_style = 'Dark'
             case 'Light':
-                self.setStyleSheet("background-color: #fff; color: #000")
+                self.setStyleSheet("background-color: #bfbfbf; color: #000")
                 self.editor.change_style(style)
                 for i in self.new_editor_list:
                     i.change_style(style)
@@ -218,6 +227,14 @@ class PandaPad(QWidget):
             self.create_new_tab()
             self.new_editor.set_text(data)
             self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), file_name)
+
+    def mousePressEvent(self, event):
+        self.dragPos = event.globalPosition().toPoint()
+
+    def mouseMoveEvent(self, event):
+        self.move(self.pos() + event.globalPosition().toPoint() - self.dragPos)
+        self.dragPos = event.globalPosition().toPoint()
+        event.accept()
 
 
 app = QApplication(sys.argv)
