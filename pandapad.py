@@ -2,7 +2,7 @@ from pathlib import Path
 from PyQt6.QtCore import Qt, QDir
 from PyQt6.QtGui import QAction, QFileSystemModel, QCursor
 from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QTextEdit, QMenuBar, QFileDialog, QMessageBox, \
-    QTabWidget, QHBoxLayout, QTreeView, QMenu, QFrame
+    QTabWidget, QHBoxLayout, QTreeView, QMenu
 
 import sys
 
@@ -26,18 +26,17 @@ class EditWidget(QTextEdit):
                 self.setStyleSheet("background-color: #303030; color: #fff")
             case 'Light':
                 self.setStyleSheet("background-color: #fff; color: #000 ")
-        print(self.styleSheet())
+
 
 class PandaPad(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.file_tree = None
         self.new_editor = None
         self.setAutoFillBackground(True)
         self.setStyleSheet("background-color: #424242; "
                            "color: #fff")
-
+        self.new_editor_list = []
         self.default_style = 'Dark'
         self.resize(1000, 600)
         self.setWindowTitle("PandaPad")
@@ -116,6 +115,7 @@ class PandaPad(QWidget):
         self.editor.change_style(self.default_style)
         self.file_browser_enable = False
         self.file_tree = QTreeView(self)
+        self.file_tree.hide()
         self.file_tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
 
         self.model = QFileSystemModel()
@@ -138,13 +138,13 @@ class PandaPad(QWidget):
     def create_new_tab(self):
         self.count += 1
         self.new_editor = EditWidget()
-        self.new_editor.setStyleSheet(EditWidget.styleSheet(self))
         self.index = self.tab.addTab(self.new_editor, f"New Text {self.count}")
         self.tab.setCurrentIndex(self.index)
         if self.default_style == 'Dark':
             self.new_editor.change_style('Dark')
         else:
             self.new_editor.change_style('Light')
+        self.new_editor_list.append(self.new_editor)
 
     def save_as_text(self):
         name = QFileDialog.getSaveFileName(self, 'Save File')
@@ -169,19 +169,20 @@ class PandaPad(QWidget):
     def change_style(self, style):
         match style:
             case 'Dark':
-                self.setStyleSheet("background-color: #424242; "
-                                   "color: #fff")
+                self.setStyleSheet("background-color: #424242; color: #fff")
                 self.editor.change_style(style)
+                for i in self.new_editor_list:
+                    i.change_style(style)
                 self.default_style = 'Dark'
             case 'Light':
-                self.setStyleSheet("background-color: #fff; "
-                                   "color: #000")
+                self.setStyleSheet("background-color: #fff; color: #000")
                 self.editor.change_style(style)
+                for i in self.new_editor_list:
+                    i.change_style(style)
                 self.default_style = 'Light'
 
     def show_about(self):
         about = QMessageBox(self)
-
         about.setWindowTitle("About app PandaPad")
         about.setText(f"\nVer: PandaPad v0.0.1\n"
                       f"\nInfo: PandaPad it's simple text editor for Linux Desktop\n"
