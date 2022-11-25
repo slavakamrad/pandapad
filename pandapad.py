@@ -1,5 +1,5 @@
 from pathlib import Path
-from PyQt6.QtCore import Qt, QDir, QPoint
+from PyQt6.QtCore import Qt, QDir
 from PyQt6.QtGui import QAction, QFileSystemModel, QCursor
 from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QTextEdit, QMenuBar, QFileDialog, QMessageBox, \
     QTabWidget, QHBoxLayout, QTreeView, QMenu, QFrame
@@ -26,32 +26,34 @@ class EditWidget(QTextEdit):
 class PandaPad(QWidget):
     def __init__(self):
         super().__init__()
-        self.dragPos = QPoint()
+        self.dragPos = None
         self.new_editor = None
 
         self.setAutoFillBackground(True)
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
-        # self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setStyleSheet("background-color: #424242; color: #fff; border: 5px;")
+        #self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setStyleSheet("background-color: #424242; color: #fff; border: 50px;")
         self.new_editor_list = []
         self.default_style = 'Dark'
-        self.resize(1000, 600)
+        self.setMinimumSize(900, 600)
+
         self.setWindowTitle("PandaPad")
 
         self.home_dir = str(Path.home())
 
-        self.main_layout = QVBoxLayout()
+        self.frame = QFrame()
+        self.frame.setStyleSheet("background-color: #ff9494; color: #fff; ")
+
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.addWidget(self.frame)
 
         self.v_layout = QVBoxLayout()
         self.h_layout = QHBoxLayout()
 
-        self.main_layout.addLayout(self.v_layout)
-        self.main_layout.addLayout(self.h_layout)
-
         self.setLayout(self.main_layout)
 
-        menubar = QMenuBar()
-        managebar = QMenuBar()
+        menubar = QMenuBar(self)
+        managebar = QMenuBar(self)
 
         file_new = QAction("New", self)
         file_new.setShortcut('Ctrl+N')
@@ -134,10 +136,13 @@ class PandaPad(QWidget):
         self.tab.setCurrentIndex(self.index)
         self.tab.tabCloseRequested.connect(self.close_tab)
         self.menu_layout = QHBoxLayout()
+
+        self.v_layout.addLayout(self.menu_layout)
         self.menu_layout.addWidget(menubar)
         self.menu_layout.addWidget(managebar, alignment=Qt.AlignmentFlag.AlignRight)
-        self.v_layout.addLayout(self.menu_layout)
         self.h_layout.addWidget(self.tab)
+        self.main_layout.addLayout(self.v_layout)
+        self.main_layout.addLayout(self.h_layout)
 
     def close_tab(self):
         if self.count >= 1:
@@ -229,12 +234,11 @@ class PandaPad(QWidget):
             self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), file_name)
 
     def mousePressEvent(self, event):
-        self.dragPos = event.globalPosition().toPoint()
+        self.dragPos = event.scenePosition().toPoint()
 
     def mouseMoveEvent(self, event):
-        self.move(self.pos() + event.globalPosition().toPoint() - self.dragPos)
-        self.dragPos = event.globalPosition().toPoint()
-        event.accept()
+        if self.dragPos is not None:
+            self.window().move(event.globalPosition().toPoint() - self.dragPos)
 
 
 app = QApplication(sys.argv)
