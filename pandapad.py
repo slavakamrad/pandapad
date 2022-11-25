@@ -53,7 +53,7 @@ class PandaPad(QWidget):
         self.setLayout(self.main_layout)
 
         menubar = QMenuBar(self)
-        managebar = QMenuBar(self)
+        self.managebar = QMenuBar(self)
 
         file_new = QAction("New", self)
         file_new.setShortcut('Ctrl+N')
@@ -111,11 +111,15 @@ class PandaPad(QWidget):
         q = menubar.addMenu('&?')
         q.addAction(about_menu)
 
-        collapse_button = managebar.addAction("🗕")
+        collapse_button = self.managebar.addAction("🗕")
         collapse_button.triggered.connect(lambda: self.showMinimized())
-        expand_button = managebar.addAction("🗖")
-        expand_button.triggered.connect(lambda: self.showMaximized())
-        close_button = managebar.addAction("🗙")
+
+        self.expand_pic = "🗖"
+
+        self.expand_button = self.managebar.addAction(self.expand_pic)
+        self.expand_button.triggered.connect(lambda: self.expand_widget(self.expand_pic))
+
+        close_button = self.managebar.addAction("🗙")
         close_button.triggered.connect(lambda: self.close())
 
         self.editor = EditWidget()
@@ -138,10 +142,19 @@ class PandaPad(QWidget):
 
         self.v_layout.addLayout(self.menu_layout)
         self.menu_layout.addWidget(menubar)
-        self.menu_layout.addWidget(managebar, alignment=Qt.AlignmentFlag.AlignRight)
+        self.menu_layout.addWidget(self.managebar, alignment=Qt.AlignmentFlag.AlignRight)
         self.h_layout.addWidget(self.tab)
         self.main_layout.addLayout(self.v_layout)
         self.main_layout.addLayout(self.h_layout)
+
+    def expand_widget(self, pic):
+        match pic:
+            case "🗖":
+                self.showMaximized()
+                self.expand_pic = "🗗"
+            case "🗗":
+                self.resize(900, 600)
+                self.expand_pic = "🗖"
 
     def close_tab(self):
         if self.count >= 1:
