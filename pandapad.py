@@ -31,7 +31,7 @@ class PandaPad(QWidget):
 
         self.setAutoFillBackground(True)
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
-        #self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        # self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setStyleSheet("background-color: #424242; color: #fff; border: 50px;")
         self.new_editor_list = []
         self.default_style = 'Dark'
@@ -112,10 +112,9 @@ class PandaPad(QWidget):
         q.addAction(about_menu)
 
         collapse_button = managebar.addAction("🗕")
-
-        # collapse_button.triggered.connect()
+        collapse_button.triggered.connect(lambda: self.showMinimized())
         expand_button = managebar.addAction("🗖")
-        # expand_button.triggered.connect()
+        expand_button.triggered.connect(lambda: self.showMaximized())
         close_button = managebar.addAction("🗙")
         close_button.triggered.connect(lambda: self.close())
 
@@ -234,11 +233,10 @@ class PandaPad(QWidget):
             self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), file_name)
 
     def mousePressEvent(self, event):
-        self.dragPos = event.scenePosition().toPoint()
+        self.dragPos = event.globalPosition().toPoint()
 
     def mouseMoveEvent(self, event):
-        if self.dragPos is not None:
-            self.window().move(event.globalPosition().toPoint() - self.dragPos)
+        self.move(event.globalPosition().toPoint() - self.dragPos)
 
 
 app = QApplication(sys.argv)
