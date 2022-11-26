@@ -29,10 +29,11 @@ class PandaPad(QWidget):
         self.dragPos = None
         self.new_editor = None
 
-        self.setAutoFillBackground(True)
+        # self.setAutoFillBackground(True)
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
         # self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setStyleSheet("background-color: #424242; color: #fff; border: 50px;")
+
         self.new_editor_list = []
         self.default_style = 'Dark'
         self.setMinimumSize(900, 600)
@@ -41,11 +42,7 @@ class PandaPad(QWidget):
 
         self.home_dir = str(Path.home())
 
-        self.frame = QFrame()
-        self.frame.setStyleSheet("background-color: #ff9494; color: #fff; ")
-
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.addWidget(self.frame)
 
         self.v_layout = QVBoxLayout()
         self.h_layout = QHBoxLayout()
@@ -141,7 +138,7 @@ class PandaPad(QWidget):
         self.menu_layout = QHBoxLayout()
 
         self.v_layout.addLayout(self.menu_layout)
-        self.menu_layout.addWidget(menubar)
+        self.menu_layout.addWidget(menubar, alignment=Qt.AlignmentFlag.AlignLeft)
         self.menu_layout.addWidget(self.managebar, alignment=Qt.AlignmentFlag.AlignRight)
         self.h_layout.addWidget(self.tab)
         self.main_layout.addLayout(self.v_layout)
@@ -150,11 +147,11 @@ class PandaPad(QWidget):
     def expand_widget(self, pic):
         match pic:
             case "🗖":
-                self.showMaximized()
                 self.expand_pic = "🗗"
+                self.showMaximized()
             case "🗗":
-                self.resize(900, 600)
                 self.expand_pic = "🗖"
+                self.showNormal()
 
     def close_tab(self):
         if self.count >= 1:
@@ -246,15 +243,22 @@ class PandaPad(QWidget):
             self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), file_name)
 
     def mousePressEvent(self, event):
-        self.dragPos = event.globalPosition().toPoint()
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._move()
+            return super().mousePressEvent(event)
 
-    def mouseMoveEvent(self, event):
-        self.move(event.globalPosition().toPoint() - self.dragPos)
+    def _move(self):
+        window = self.window().windowHandle()
+        window.startSystemMove()
+
+    def _resize(self):
+        window = self.window().windowHandle()
+        window.startSystemResize(Qt.Edge.RightEdge)
 
 
 app = QApplication(sys.argv)
 
-window = PandaPad()
-window.show()
+pandapad = PandaPad()
+pandapad.show()
 
 app.exec()
