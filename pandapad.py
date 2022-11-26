@@ -188,24 +188,28 @@ class PandaPad(QWidget):
                 self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), name)
 
     def open_file_dialog(self):
+        if self.tab.currentIndex() == -1:
+            self.create_new_tab()
         name = QFileDialog.getOpenFileName(self, 'Open file', self.home_dir)
         name = name[0].split('/')[-1]
         if name:
             f = open(self.home_dir + '/' + name, 'r')
             with f:
                 data = f.read()
-                self.new_editor_list[self.tab.indexOf(self.tab.currentWidget())].set_text(data)
                 self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), name)
+                self.new_editor_list[self.tab.indexOf(self.tab.currentWidget())].set_text(data)
 
     def open_tree_file(self):
+        if self.tab.currentIndex() == -1:
+            self.create_new_tab()
         index = self.file_tree.currentIndex()
         name = self.model.fileName(index)
 
         f = open(self.home_dir + '/' + name, 'r')
         with f:
             data = f.read()
-            self.new_editor_list[self.tab.indexOf(self.tab.currentWidget())].set_text(data)
             self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), name)
+            self.new_editor_list[self.tab.indexOf(self.tab.currentWidget())].set_text(data)
 
     def change_style(self, style):
         match style:
