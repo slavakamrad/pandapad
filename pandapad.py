@@ -2,7 +2,7 @@ from pathlib import Path
 from PyQt6.QtCore import Qt, QDir
 from PyQt6.QtGui import QAction, QFileSystemModel, QCursor
 from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QTextEdit, QMenuBar, QFileDialog, QMessageBox, \
-    QTabWidget, QHBoxLayout, QTreeView, QMenu, QFrame
+    QTabWidget, QHBoxLayout, QTreeView, QMenu
 
 import sys
 
@@ -13,7 +13,7 @@ class EditWidget(QTextEdit):
         self.text_input = QTextEdit()
 
     def set_text(self, data):
-        self.text_input.setText(data)
+        self.setText(data)
 
     def change_style(self, style):
         match style:
@@ -42,10 +42,12 @@ class PandaPad(QWidget):
 
         self.home_dir = str(Path.home())
 
-        self.main_layout = QVBoxLayout(self)
+        self.main_layout = QVBoxLayout()
 
         self.v_layout = QVBoxLayout()
         self.h_layout = QHBoxLayout()
+        self.main_layout.addLayout(self.v_layout)
+        self.main_layout.addLayout(self.h_layout)
 
         self.setLayout(self.main_layout)
 
@@ -58,7 +60,11 @@ class PandaPad(QWidget):
 
         file_open = QAction("Open", self)
         file_open.setShortcut('Ctrl+O')
-        file_open.triggered.connect(self.open_dialog)
+        file_open.triggered.connect(self.open_file_dialog)
+
+        file_save_as = QAction("Save As", self)
+
+        file_save_as.triggered.connect(self.save_as_text)
 
         file_save = QAction("Save", self)
         file_save.setShortcut('Ctrl+S')
@@ -82,15 +88,18 @@ class PandaPad(QWidget):
         about_menu = QAction("About", self)
         about_menu.triggered.connect(self.show_about)
 
-        enable_file_browser = QAction("Enable File browser", self)
+        enable_file_browser = QAction("Enable/Disable File browser", self)
         enable_file_browser.triggered.connect(self.enable_file_browser)
         enable_file_browser.setShortcut('Ctrl+Q')
 
         file_menu = menubar.addMenu('&File')
 
         file_menu.addAction(file_new)
+        file_menu.addSection('Actions')
         file_menu.addAction(file_open)
         file_menu.addAction(file_save)
+        file_menu.addAction(file_save_as)
+        file_menu.addSeparator()
         file_menu.addAction(pad_exit)
 
         view = menubar.addMenu('&View')
@@ -120,9 +129,11 @@ class PandaPad(QWidget):
         close_button.triggered.connect(lambda: self.close())
 
         self.editor = EditWidget()
+        self.new_editor_list.append(self.editor)
+
         self.editor.change_style(self.default_style)
         self.file_browser_enable = False
-        self.file_tree = QTreeView(self)
+        self.file_tree = QTreeView()
         self.file_tree.hide()
         self.file_tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
 
@@ -141,8 +152,6 @@ class PandaPad(QWidget):
         self.menu_layout.addWidget(menubar, alignment=Qt.AlignmentFlag.AlignLeft)
         self.menu_layout.addWidget(self.managebar, alignment=Qt.AlignmentFlag.AlignRight)
         self.h_layout.addWidget(self.tab)
-        self.main_layout.addLayout(self.v_layout)
-        self.main_layout.addLayout(self.h_layout)
 
     def expand_widget(self, pic):
         match pic:
@@ -171,23 +180,32 @@ class PandaPad(QWidget):
 
     def save_as_text(self):
         name = QFileDialog.getSaveFileName(self, 'Save File')
-        file_name = name[0].split('/')[-1]
-
-        if name[0]:
+        name = name[0].split('/')[-1]
+        if name:
             f = open(name[0], 'w')
             with f:
                 f.writelines(i for i in self.tab.currentWidget().text_input.toPlainText())
-                self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), file_name)
+                self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), name)
 
-    def open_dialog(self):
+    def open_file_dialog(self):
         name = QFileDialog.getOpenFileName(self, 'Open file', self.home_dir)
-        file_name = name[0].split('/')[-1]
-        if name[0]:
-            f = open(name[0], 'r')
+        name = name[0].split('/')[-1]
+        if name:
+            f = open(self.home_dir + '/' + name, 'r')
             with f:
                 data = f.read()
-                self.new_editor.set_text(data)
-                self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), file_name)
+                self.new_editor_list[self.tab.indexOf(self.tab.currentWidget())].set_text(data)
+                self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), name)
+
+    def open_tree_file(self):
+        index = self.file_tree.currentIndex()
+        name = self.model.fileName(index)
+
+        f = open(self.home_dir + '/' + name, 'r')
+        with f:
+            data = f.read()
+            self.new_editor_list[self.tab.indexOf(self.tab.currentWidget())].set_text(data)
+            self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), name)
 
     def change_style(self, style):
         match style:
@@ -231,16 +249,6 @@ class PandaPad(QWidget):
         file_open.triggered.connect(self.open_tree_file)
         cursor = QCursor()
         menu.exec(cursor.pos())
-
-    def open_tree_file(self):
-        index = self.file_tree.currentIndex()
-        file_name = self.model.fileName(index)
-        f = open(file_name, 'r')
-        with f:
-            data = f.read()
-            self.create_new_tab()
-            self.new_editor.set_text(data)
-            self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), file_name)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
