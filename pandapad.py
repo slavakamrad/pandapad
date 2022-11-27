@@ -6,8 +6,6 @@ from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QTextEdit, QMenu
 
 import sys
 
-from PySide2.QtWidgets import QDesktopWidget
-
 
 class EditWidget(QTextEdit):
     def __init__(self):
@@ -31,9 +29,7 @@ class PandaPad(QWidget):
         self.dragPos = None
         self.new_editor = None
 
-        # self.setAutoFillBackground(True)
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
-        # self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setStyleSheet("background-color: #424242; color: #fff; border: 50px;")
 
         self.new_editor_list = []
@@ -122,10 +118,11 @@ class PandaPad(QWidget):
         collapse_button = self.managebar.addAction("🗕")
         collapse_button.triggered.connect(lambda: self.showMinimized())
 
-        self.expand_pic = "🗖"
+        self.expand = False
 
-        self.expand_button = self.managebar.addAction(self.expand_pic)
-        self.expand_button.triggered.connect(lambda: self.expand_widget(self.expand_pic))
+        self.expand_button = self.managebar.addAction("🗖")
+
+        self.expand_button.triggered.connect(lambda: self.expand_widget(self.expand))
 
         close_button = self.managebar.addAction("🗙")
         close_button.triggered.connect(lambda: self.close())
@@ -155,13 +152,15 @@ class PandaPad(QWidget):
         self.menu_layout.addWidget(self.managebar, alignment=Qt.AlignmentFlag.AlignRight)
         self.h_layout.addWidget(self.tab)
 
-    def expand_widget(self, pic):
-        match pic:
-            case "🗖":
-                self.expand_pic = "🗗"
+    def expand_widget(self, expand):
+        match expand:
+            case False:
+                self.expand = True
+                self.expand_button.setText("🗗")
                 self.showMaximized()
-            case "🗗":
-                self.expand_pic = "🗖"
+            case True:
+                self.expand = False
+                self.expand_button.setText("🗖")
                 self.showNormal()
 
     def close_tab(self):
@@ -196,15 +195,12 @@ class PandaPad(QWidget):
         self.open_file_tab(name, data)
 
     def open_tree_file(self):
-        if self.tab.currentIndex() == -1:
-            self.create_new_tab()
         index = self.file_tree.currentIndex()
         name = self.model.fileName(index)
 
         f = open(self.home_dir + '/' + name, 'r')
         with f:
             data = f.read()
-        self.create_new_tab()
         self.open_file_tab(name, data)
 
     def save_as_text(self):
