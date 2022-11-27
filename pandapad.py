@@ -6,6 +6,8 @@ from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QTextEdit, QMenu
 
 import sys
 
+from PySide2.QtWidgets import QDesktopWidget
+
 
 class EditWidget(QTextEdit):
     def __init__(self):
@@ -166,6 +168,7 @@ class PandaPad(QWidget):
         if self.count >= 1:
             self.tab.removeTab(self.tab.currentIndex())
             self.count -= 1
+            self.new_editor_list.pop(self.tab.currentIndex())
 
     def create_new_tab(self):
         self.count += 1
@@ -178,27 +181,19 @@ class PandaPad(QWidget):
             self.new_editor.change_style('Light')
         self.new_editor_list.append(self.new_editor)
 
-    def save_as_text(self):
-        name = QFileDialog.getSaveFileName(self, 'Save File')
-        name = name[0].split('/')[-1]
-        if name:
-            f = open(name[0], 'w')
-            with f:
-                f.writelines(i for i in self.tab.currentWidget().text_input.toPlainText())
-                self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), name)
+    def open_file_tab(self, name, data):
+        self.create_new_tab()
+        index = self.tab.indexOf(self.tab.currentWidget())
+        self.new_editor_list[index].set_text(data)
+        self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), name)
 
     def open_file_dialog(self):
-        if self.tab.currentIndex() == -1:
-            self.create_new_tab()
         name = QFileDialog.getOpenFileName(self, 'Open file', self.home_dir)
         name = name[0].split('/')[-1]
         f = open(self.home_dir + '/' + name, 'r')
-        if self.tab.currentIndex() == -1:
-            self.create_new_tab()
         with f:
             data = f.read()
-            self.new_editor_list[self.tab.indexOf(self.tab.currentWidget())].set_text(data)
-            self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), name)
+        self.open_file_tab(name, data)
 
     def open_tree_file(self):
         if self.tab.currentIndex() == -1:
@@ -209,8 +204,18 @@ class PandaPad(QWidget):
         f = open(self.home_dir + '/' + name, 'r')
         with f:
             data = f.read()
-            self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), name)
-            self.new_editor_list[self.tab.indexOf(self.tab.currentWidget())].set_text(data)
+        self.create_new_tab()
+        self.open_file_tab(name, data)
+
+    def save_as_text(self):
+        name = QFileDialog.getSaveFileName(self, 'Save File')
+        name = name[0].split('/')[-1]
+        index = self.tab.indexOf(self.tab.currentWidget())
+        if name:
+            f = open(self.home_dir + '/' + name, 'w')
+            with f:
+                f.writelines(i for i in self.new_editor_list[index].toPlainText())
+        self.tab.setTabText(self.tab.indexOf(self.tab.currentWidget()), name)
 
     def change_style(self, style):
         match style:
@@ -230,6 +235,7 @@ class PandaPad(QWidget):
     def show_about(self):
         about = QMessageBox(self)
         about.setWindowTitle("About app PandaPad")
+        about.setWindowFlag(Qt.WindowType.FramelessWindowHint)
         about.setText(f"\nVer: PandaPad v0.0.1\n"
                       f"\nInfo: PandaPad it's simple text editor for Linux Desktop\n"
                       f"\nAuthor: Slavakamrad")
