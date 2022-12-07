@@ -3,8 +3,12 @@ from PyQt6.QtCore import Qt, QDir
 from PyQt6.QtGui import QAction, QFileSystemModel, QCursor
 from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget, QTextEdit, QMenuBar, QFileDialog, QMessageBox, \
     QTabWidget, QHBoxLayout, QTreeView, QMenu
-
+from configparser import ConfigParser
 import sys
+from lang import ru, en
+
+config = ConfigParser()
+config.read('config.ini')
 
 
 class EditWidget(QTextEdit):
@@ -30,10 +34,24 @@ class PandaPad(QWidget):
         self.new_editor = None
 
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
-        self.setStyleSheet("background-color: #424242; color: #fff; border: 50px;")
 
         self.new_editor_list = []
-        self.default_style = 'Dark'
+        self.default_style = config.get('style', 'COLOR_SCHEME')
+
+        match self.default_style:
+            case 'Dark':
+                self.setStyleSheet("background-color: #424242; color: #fff")
+            case 'Light':
+                self.setStyleSheet("background-color: #bfbfbf; color: #000")
+
+        self.default_lang = config.get('lang', 'LANG')
+        self.lang_dict = en
+        match self.default_lang:
+            case 'RU':
+                self.lang_dict = ru
+            case 'EN':
+                self.lang_dict = en
+
         self.setMinimumSize(900, 600)
 
         self.setWindowTitle("PandaPad")
@@ -52,45 +70,45 @@ class PandaPad(QWidget):
         menubar = QMenuBar(self)
         self.managebar = QMenuBar(self)
 
-        file_new = QAction("New", self)
+        file_new = QAction(self.lang_dict['New'], self)
         file_new.setShortcut('Ctrl+N')
         file_new.triggered.connect(self.create_new_tab)
 
-        file_open = QAction("Open", self)
+        file_open = QAction(self.lang_dict["Open"], self)
         file_open.setShortcut('Ctrl+O')
         file_open.triggered.connect(self.open_file_dialog)
 
-        file_save_as = QAction("Save As", self)
+        file_save_as = QAction(self.lang_dict["Save As"], self)
 
         file_save_as.triggered.connect(self.save_as_text)
 
-        file_save = QAction("Save", self)
+        file_save = QAction(self.lang_dict["Save"], self)
         file_save.setShortcut('Ctrl+S')
         file_save.triggered.connect(self.save_as_text)
 
-        pad_exit = QAction("Exit", self)
+        pad_exit = QAction(self.lang_dict["Exit"], self)
         pad_exit.triggered.connect(lambda: self.close())
 
-        pad_dark_style = QAction("Dark", self)
+        pad_dark_style = QAction(self.lang_dict["Dark"], self)
         pad_dark_style.triggered.connect(lambda: self.change_style("Dark"))
 
-        pad_light_style = QAction("Light", self)
+        pad_light_style = QAction(self.lang_dict["Light"], self)
         pad_light_style.triggered.connect(lambda: self.change_style("Light"))
 
-        pad_ru_lang = QAction("RU", self)
-        pad_ru_lang.triggered.connect(lambda: self.change_style("Dark"))
+        pad_ru_lang = QAction(self.lang_dict["RU"], self)
+        pad_ru_lang.triggered.connect(lambda: self.change_lang("RU"))
 
-        pad_en_lang = QAction("EN", self)
-        pad_en_lang.triggered.connect(lambda: self.change_style("Dark"))
+        pad_en_lang = QAction(self.lang_dict["EN"], self)
+        pad_en_lang.triggered.connect(lambda: self.change_lang("EN"))
 
-        about_menu = QAction("About", self)
+        about_menu = QAction(self.lang_dict["About"], self)
         about_menu.triggered.connect(self.show_about)
 
-        enable_file_browser = QAction("Enable/Disable File browser", self)
+        enable_file_browser = QAction(self.lang_dict["Enable/Disable File browser"], self)
         enable_file_browser.triggered.connect(self.enable_file_browser)
         enable_file_browser.setShortcut('Ctrl+Q')
 
-        file_menu = menubar.addMenu('&File')
+        file_menu = menubar.addMenu(self.lang_dict['&File'])
 
         file_menu.addAction(file_new)
         file_menu.addSection('Actions')
@@ -100,13 +118,13 @@ class PandaPad(QWidget):
         file_menu.addSeparator()
         file_menu.addAction(pad_exit)
 
-        view = menubar.addMenu('&View')
+        view = menubar.addMenu(self.lang_dict['&View'])
 
-        style = view.addMenu('Style')
+        style = view.addMenu(self.lang_dict['Style'])
         style.addAction(pad_dark_style)
         style.addAction(pad_light_style)
 
-        lang = view.addMenu('Lang')
+        lang = view.addMenu(self.lang_dict['Lang'])
         lang.addAction(pad_ru_lang)
         lang.addAction(pad_en_lang)
 
@@ -220,13 +238,30 @@ class PandaPad(QWidget):
                 self.editor.change_style(style)
                 for i in self.new_editor_list:
                     i.change_style(style)
-                self.default_style = 'Dark'
+                config.set('style', 'COLOR_SCHEME', 'Dark')
             case 'Light':
                 self.setStyleSheet("background-color: #bfbfbf; color: #000")
                 self.editor.change_style(style)
                 for i in self.new_editor_list:
                     i.change_style(style)
-                self.default_style = 'Light'
+                config.set('style', 'COLOR_SCHEME', 'Light')
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
+
+    def change_lang(self, lang):
+        match lang:
+            case 'RU':
+                self.lang_dict = ru
+                self.default_lang = config.get('lang', 'LANG')
+                config.set('lang', 'LANG', 'RU')
+
+            case 'EN':
+                self.lang_dict = en
+                self.default_lang = config.get('lang', 'LANG')
+                config.set('lang', 'LANG', 'EN')
+
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
 
     def show_about(self):
         about = QMessageBox(self)
